@@ -5,7 +5,7 @@ from bson.json_util import loads, dumps
 
 import uuid
 
-app = Flask(__name__)
+app = Flask("WhereIsMyMoney")
 client = MongoClient()
 db = client.whereismymoney_dev
 
@@ -45,9 +45,24 @@ def createApp():
             return { "error": "app already exists" }, 500
 
 @app.route('/app/delete/<id>', methods=['PUT'])
-def updateApp(id):
+def deleteApp(id):
     query = db.app.delete_many({ "export": escape(id) })
     if query == None:
         return { "error" : "App not found" }, 500
     else:
         return { "status" : "success" }, 200
+    
+    
+@app.route('/app/update/<id>', methods=['POST'])
+def updateApp(id):
+    if ("status" in request.json != False):
+        status = request.json["status"]
+        if (status == "off" or status == "on"): 
+            query = { "export" : escape(id) }
+            values = { "$set": { "status": escape(status) } }
+            db.app.update_one(query, values)    
+            return { "status" : "success" }, 200
+        else:
+             return { "error": "invalid status" }, 500
+    else: 
+        return { "error": "status field doesnt exist" }, 500
